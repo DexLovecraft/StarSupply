@@ -14,8 +14,8 @@ app.use((req, res, next) => {
 app.use(express.json());
 
 //app.use('url', routes)
-app.use('/ping', (res, req) => {
-    return res.json({message : "Ca marche"})
+app.use('/starsupply/ping', (res, req) => {
+  res.json({message : "Ca marche"})
 });
 
 app.listen(50051, function(){
