@@ -1,7 +1,7 @@
 const express = require('express');
 const path = require('path');
 const mongoose = require('mongoose');
-mongoose.connect('mongodb://127.0.0.1:27017/mongod');
+mongoose.connect('mongodb://127.0.0.1:27017/starsupplydb');
 const { Schema } = mongoose;
 
 const stationSchema = new Schema({
