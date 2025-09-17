@@ -212,7 +212,7 @@ app.get('/starsupply/ships', (req, res) => {
     "position": 1
   })
   .then(ship => res.json({ 'Liste des vaisseaux': ship }))
-  .catch(error => res.status(404).json({ ship }))
+  .catch(error => res.status(404).json({ error }))
 })
 
 
@@ -226,7 +226,7 @@ app.get('/starsupply/stations', (req, res) => {
     "neighbour" : 0
   })
   .then(station => res.json({ 'Liste des Stations': station }))
-  .catch(error => res.status(404).json({ station }))
+  .catch(error => res.status(404).json({ error }))
 })
 
 
