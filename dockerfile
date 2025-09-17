@@ -11,4 +11,4 @@ RUN npm install
 # Copier le reste du projet
 COPY . .
 
-EXPOSE 80
+CMD ["node","app.js"]

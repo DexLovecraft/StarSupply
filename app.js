@@ -15,7 +15,7 @@ app.use(express.json());
 
 //app.use('url', routes)
 app.use('/ping', (res, req) => {
-  res.status(200).json({message : 'Ca marche'})
+   return res.status(200).json({message : 'Ca marche'})
 } );
 
 app.listen(50051, function(){
