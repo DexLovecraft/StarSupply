@@ -1,0 +1,45 @@
+name: CI/CD API StarSupply
+
+on:
+  push:
+    branches:
+      - master
+
+jobs:
+  build-and-push:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v3
+
+      - name: Login DockerHub
+        uses: docker/login-action@v2
+        with:
+          username: ${{ secrets.DOCKER_USERNAME }}
+          password: ${{ secrets.DOCKER_PASSWORD }}
+
+      - name: Build & Push Docker image
+        run: |
+          IMAGE=dexlovecraft/starsupply
+
+          echo "🚀 Building $IMAGE"
+          docker build -t $IMAGE .
+          docker push $IMAGE
+
+  deploy:
+    needs: build-and-push
+    runs-on: ubuntu-latest
+    steps:
+      - name: Deploy to VPS
+        uses: appleboy/ssh-action@v0.1.10
+        with:
+          host: ${{ secrets.VPS_HOST }}
+          username: deploy
+          key: ${{ secrets.VPS_SSH_KEY }}
+          port: ${{ secrets.VPS_PORT }}
+          script: |
+
+            IMAGE=dexlovecraft/starsupply
+            echo "🚀 Deploying $IMAGE"
+            docker pull $IMAGE
+            docker compose -f /srv/starsupply/docker-compose.yml up -d

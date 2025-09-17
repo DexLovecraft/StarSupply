@@ -1,5 +1,24 @@
 {
   "dependencies": {
     "express": "^5.1.0"
-  }
+  },
+  "name": "starsupply",
+  "version": "1.0.0",
+  "description": "API Pour mini jeux de gestion",
+  "main": "app.js",
+  "devDependencies": {},
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "start": "node server.js"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/DexLovecraft/SupplyChain.git"
+  },
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/DexLovecraft/SupplyChain/issues"
+  },
+  "homepage": "https://github.com/DexLovecraft/SupplyChain#readme"
 }
