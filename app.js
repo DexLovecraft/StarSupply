@@ -18,5 +18,6 @@ app.use('/ping', (res, req) => {
   res.status(200).json({message : 'Ca marche'})
 } );
 
-
-module.exports = app;
+app.listen(50051, function(){
+  console.log('50051')
+})
