@@ -8,13 +8,15 @@ const stationSchema = new Schema({
   name: String,
   type: String,
   inventory :{ 
-    export:{
-      commoditiy: String,
-      quantity: Number
-    },
-    imports:{
-      commodity: String,
-      quantity: Number
+    inventory: {
+      exports: [{
+        commodity: String,
+        quantity: Number
+      }],
+      imports: [{
+        commodity: String,
+        quantity: Number
+      }]
     }
   },
   neighbour : Array
@@ -30,19 +32,20 @@ const shipSchema = new Schema({
   position: String
 })
 
-const station = mongoose.model('station', stationSchema);
+const Station = mongoose.model('station', stationSchema);
 const Ship = mongoose.model('ship', shipSchema);
 
 const hullA = new Ship({
   name: 'Hull-a',
   inventory_size : 64,
   inventory: {
-    commoditiy: 'Medical Supplies',
+    commodity: 'Medical Supplies',
     quantity: 50
   },
   position: 'Hurston'
 }) 
-hullA.save();
+hullA.save().then(() => console.log("Ship saved")).catch(err => console.error(err));
+
 
 const app = express();
 app.use((req, res, next) => {
@@ -61,11 +64,11 @@ app.get('/starsupply/ping', (req, res) => {
 
 app.get('/starsupply/ship', (req, res) => {
   Ship.find()
-  .then(ships => res.json({ 'Liste des vaisseaux': ships.name }))
+  .then(ships => res.json({ 'Liste des vaisseaux': ships }))
   .catch(error => res.status(404).json({ error }))
 })
 
-app.get('/starsupply/ship/invetory/:name', (req, res) => {
+app.get('/starsupply/ship/inventory/:name', (req, res) => {
   Ship.findOne({name: req.params.name})
   .then(ship => res.json({ "Inventaire": ship.inventory}))
   .catch(error => res.status(404).json({ error }))
