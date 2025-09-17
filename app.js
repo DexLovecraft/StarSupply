@@ -205,8 +205,6 @@ app.get('/starsupply/ships', (req, res) => {
   Ship.find({},{
     _id: 0,
     name: 1,
-    inventory_size: 0,
-    inventory:0,
     position: 1
   }).then(ship => res.json({ 'Liste des vaisseaux': ship }))
   .catch(error => res.status(404).json({ error }))
@@ -217,10 +215,7 @@ app.get('/starsupply/stations', (req, res) => {
   Station.find({},{
     _id: 0,
     name: 1,
-    type: 1,
-    inventory_size: 0,
-    inventory :0,
-    neighbour : 0
+    type: 1
   }).then(station => res.json({ 'Liste des Stations': station }))
   .catch(error => res.status(404).json({ error }))
 })
