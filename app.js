@@ -204,10 +204,31 @@ app.get('/starsupply/ping', (req, res) => {
 });
 
 app.get('/starsupply/ships', (req, res) => {
-  Ship.name.find()
-  .then(name => res.json({ 'Liste des vaisseaux': name }))
-  .catch(error => res.status(404).json({ name }))
+  Ship.find({},{
+    "_id": 0,
+    "name": 1,
+    "inventory_size": 0,
+    "inventory":0,
+    "position": 1
+  })
+  .then(ship => res.json({ 'Liste des vaisseaux': ship }))
+  .catch(error => res.status(404).json({ ship }))
 })
+
+
+app.get('/starsupply/stations', (req, res) => {
+  Ship.find({},{
+    "_id": 0,
+    "name": 1,
+    "type": 1,
+    "inventory_size": 0,
+    "inventory" :0,
+    "neighbour" : 0
+  })
+  .then(station => res.json({ 'Liste des Stations': station }))
+  .catch(error => res.status(404).json({ station }))
+})
+
 
 app.get('/starsupply/ship/:name/inventory', (req, res) => {
   Ship.findOne({name: req.params.name})
