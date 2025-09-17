@@ -8,17 +8,15 @@ const stationSchema = new Schema({
   name: String,
   type: String,
   inventory_size : Number,
-  inventory :{ 
-    inventory: {
-      exports: [{
-        commodity: String,
-        quantity: Number
-      }],
-      imports: [{
-        commodity: String,
-        quantity: Number
-      }]
-    }
+  inventory: {
+    exports: [{
+      commodity: String,
+      quantity: Number
+    }],
+    imports: [{
+      commodity: String,
+      quantity: Number
+    }]
   },
   neighbour : [String]
 });
@@ -165,7 +163,7 @@ artemisFoundry.save().then(() => console.log("Station saved")).catch(err => cons
 const aerithaCrafter = new Station({
   name: "Aeritha-Crafter",
   type: "Industrie",
-  inventory_size : Number,
+  inventory_size : 1000,
   inventory: {
     exports: [{
       commodity: "Explosive",
@@ -205,27 +203,25 @@ app.get('/starsupply/ping', (req, res) => {
 
 app.get('/starsupply/ships', (req, res) => {
   Ship.find({},{
-    "_id": 0,
-    "name": 1,
-    "inventory_size": 0,
-    "inventory":0,
-    "position": 1
-  })
-  .then(ship => res.json({ 'Liste des vaisseaux': ship }))
+    _id: 0,
+    name: 1,
+    inventory_size: 0,
+    inventory:0,
+    position: 1
+  }).then(ship => res.json({ 'Liste des vaisseaux': ship }))
   .catch(error => res.status(404).json({ error }))
 })
 
 
 app.get('/starsupply/stations', (req, res) => {
-  Ship.find({},{
-    "_id": 0,
-    "name": 1,
-    "type": 1,
-    "inventory_size": 0,
-    "inventory" :0,
-    "neighbour" : 0
-  })
-  .then(station => res.json({ 'Liste des Stations': station }))
+  Station.find({},{
+    _id: 0,
+    name: 1,
+    type: 1,
+    inventory_size: 0,
+    inventory :0,
+    neighbour : 0
+  }).then(station => res.json({ 'Liste des Stations': station }))
   .catch(error => res.status(404).json({ error }))
 })
 
@@ -236,7 +232,7 @@ app.get('/starsupply/ship/:name/inventory', (req, res) => {
   .catch(error => res.status(404).json({ error }))
 })
 
-app.get('/starsupply/ship/:name/positon', (req, res) => {
+app.get('/starsupply/ship/:name/position', (req, res) => {
   Ship.findOne({name: req.params.name})
   .then(ship => res.json({ "Position": ship.position}))
   .catch(error => res.status(404).json({ error }))
@@ -253,24 +249,46 @@ app.get('/starsupply/ship/:name/destination', (req, res) => {
 })
 
 app.get('/starsupply/ship/:name/load/:supply/:quantity', (req, res) => {
-  Ship.findOne({name: req.params.name},{inventory})
-  .then((ship) => {
-    ship.inventory.push({ "$inc" :{ commodity: req.params.supply, quantity: +Number(req.params.quantity) }})
-    Station.findOne({name: ship.position}).findOne({exports : {commodity: req.params.supply}}).updateOne({ "$inc":{quantity: -Number(req.params.quantity)}})
-    .then(stations => res.status(200).json({status : 'Contenu chargé'}))
-    .catch(error => res.status(404).json({ error }))
-  })
+  Ship.findOne({ name: req.params.name }).then(ship => {
+    let item = ship.inventory.find(i => i.commodity === req.params.supply);
+    if (item) {
+      item.quantity += Number(req.params.quantity);
+    } else {
+      ship.inventory.push({ commodity: req.params.supply, quantity: Number(req.params.quantity) });
+    }
+    ship.save();
+    Station.findOne({name: ship.position}).then(station => {
+      let exported = station.inventory.imports.find(i => i.commodity === req.params.supply);
+      if (exported) {
+        exported.quantity -= Number(req.params.quantity)
+      } else {
+        console.log('cannot export that')
+      }
+      station.save();
+    })
+  });
 })
 
 app.get('/starsupply/ship/:name/delivery/:supply/:quantity', (req, res) => {
-  Ship.findOne({name: req.params.name},{inventory})
-  .then((ship) => {
-    ship.inventory.push({ "$inc" :{ commodity: req.params.supply, quantity: -Number(req.params.quantity) }})
-    Station.findOne({name: ship.position}).findOne({imports : {commodity: req.params.supply}}).updateOne({ "$inc":{quantity: +Number(req.params.quantity)}})
-    .then(stations => res.status(200).json({status : 'Contenu chargé'}))
-    .catch(error => res.status(404).json({ error }))
+  Ship.findOne({ name: req.params.name }).then(ship => {
+    let item = ship.inventory.find(i => i.commodity === req.params.supply);
+    if (item) {
+      item.quantity -= Number(req.params.quantity);
+    } else {
+      ship.inventory.push({ commodity: req.params.supply, quantity: Number(req.params.quantity) });
+    }
+    ship.save();
+    Station.findOne({name: ship.position}).then(station => {
+      let imported = station.inventory.imports.find(i => i.commodity === req.params.supply);
+      if (imported) {
+        imported.quantity += Number(req.params.quantity)
+      } else {
+        console.log('cannot import that')
+      }
+      station.save();
+    })
   })
-})
+});
 
 
 app.listen(50051, function(){
