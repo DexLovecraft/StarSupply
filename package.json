@@ -1,12 +1,12 @@
 {
   "dependencies": {
-    "express": "^5.1.0"
+    "express": "^5.1.0",
+    "mongoose": "^8.18.1"
   },
   "name": "starsupply",
   "version": "1.0.0",
   "description": "API Pour mini jeux de gestion",
   "main": "app.js",
-  "devDependencies": {},
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
     "start": "node server.js"
