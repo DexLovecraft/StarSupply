@@ -248,48 +248,90 @@ app.get('/starsupply/ship/:name/destination', (req, res) => {
   .catch(error => res.status(404).json({ error }))
 })
 
-app.get('/starsupply/ship/:name/load/:supply/:quantity', (req, res) => {
-  Ship.findOne({ name: req.params.name }).then(ship => {
-    let item = ship.inventory.find(i => i.commodity === req.params.supply);
-    if (item) {
-      item.quantity += Number(req.params.quantity);
-    } else {
-      ship.inventory.push({ commodity: req.params.supply, quantity: Number(req.params.quantity) });
-    }
-    ship.save();
-    Station.findOne({name: ship.position}).then(station => {
-      let exported = station.inventory.imports.find(i => i.commodity === req.params.supply);
-      if (exported) {
-        exported.quantity -= Number(req.params.quantity)
-      } else {
-        console.log('cannot export that')
-      }
-      station.save();
-    })
-  });
-})
+app.get('/starsupply/ship/:name/load/:supply/:quantity', async (req, res) => {
+  try {
+    const { name, supply, quantity } = req.params;
+    const qty = Number(quantity);
 
-app.get('/starsupply/ship/:name/delivery/:supply/:quantity', (req, res) => {
-  Ship.findOne({ name: req.params.name }).then(ship => {
-    let item = ship.inventory.find(i => i.commodity === req.params.supply);
-    if (item) {
-      item.quantity -= Number(req.params.quantity);
-    } else {
-      ship.inventory.push({ commodity: req.params.supply, quantity: Number(req.params.quantity) });
+    const ship = await Ship.findOne({ name });
+    if (!ship) return res.status(404).json({ error: "Ship not found" });
+
+    const station = await Station.findOne({ name: ship.position });
+    if (!station) return res.status(404).json({ error: "Station not found" });
+
+    // Vérifie que la station a bien ce produit en export
+    let exported = station.inventory.exports.find(i => i.commodity === supply);
+    if (!exported || exported.quantity < qty) {
+      return res.status(400).json({ error: "Not enough supply in station" });
     }
-    ship.save();
-    Station.findOne({name: ship.position}).then(station => {
-      let imported = station.inventory.imports.find(i => i.commodity === req.params.supply);
-      if (imported) {
-        imported.quantity += Number(req.params.quantity)
-      } else {
-        console.log('cannot import that')
-      }
-      station.save();
-    })
-  })
+
+    // Vérifie la capacité du vaisseau
+    const totalInShip = ship.inventory.reduce((sum, i) => sum + i.quantity, 0);
+    if (totalInShip + qty > ship.inventory_size) {
+      return res.status(400).json({ error: "Not enough space in ship inventory" });
+    }
+
+    // Ajoute au vaisseau
+    let item = ship.inventory.find(i => i.commodity === supply);
+    if (item) {
+      item.quantity += qty;
+    } else {
+      ship.inventory.push({ commodity: supply, quantity: qty });
+    }
+
+    // Retire de la station
+    exported.quantity -= qty;
+
+    await ship.save();
+    await station.save();
+
+    res.json({ status: "Loaded successfully", ship, station });
+
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: err.message });
+  }
 });
 
+app.get('/starsupply/ship/:name/delivery/:supply/:quantity', async (req, res) => {
+  try {
+    const { name, supply, quantity } = req.params;
+    const qty = Number(quantity);
+
+    const ship = await Ship.findOne({ name });
+    if (!ship) return res.status(404).json({ error: "Ship not found" });
+
+    const station = await Station.findOne({ name: ship.position });
+    if (!station) return res.status(404).json({ error: "Station not found" });
+
+    // Vérifie que le vaisseau a bien ce produit
+    let item = ship.inventory.find(i => i.commodity === supply);
+    if (!item || item.quantity < qty) {
+      return res.status(400).json({ error: "Not enough supply in ship" });
+    }
+
+    // Vérifie que la station accepte ce produit
+    let imported = station.inventory.imports.find(i => i.commodity === supply);
+    if (!imported) {
+      return res.status(400).json({ error: "Station does not accept this supply" });
+    }
+
+    // Retire du vaisseau
+    item.quantity -= qty;
+
+    // Ajoute à la station
+    imported.quantity += qty;
+
+    await ship.save();
+    await station.save();
+
+    res.json({ status: "Delivered successfully", ship, station });
+
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: err.message });
+  }
+});
 
 app.listen(50051, function(){
   console.log('50051')
