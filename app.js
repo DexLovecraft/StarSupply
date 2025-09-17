@@ -1,8 +1,7 @@
 const express = require('express');
 const path = require('path');
 const mongoose = require('mongoose');
-const { arrayBuffer } = require('stream/consumers');
-mongoose.connect('mongodb://127.0.0.1:27017/test');
+mongoose.connect('mongodb://127.0.0.1:27017/mongod');
 const { Schema } = mongoose;
 
 const stationSchema = new Schema({
@@ -60,7 +59,7 @@ app.get('/starsupply/ping', (req, res) => {
   res.json({message: "Ca marche"});
 });
 
-app.get('/starsupply/ship/', (req, res) => {
+app.get('/starsupply/ship', (req, res) => {
   Ship.find()
   .then(ships => res.json({ 'Liste des vaisseaux': ships.name }))
   .catch(error => res.status(404).json({ error }))
