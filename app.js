@@ -137,9 +137,90 @@ app.post('/starsupply/game/start', auth, async (req, res) => {
           { input: { commodity: "Chemical", quantity: 4 }, output: { commodity: "Medical-Supply", quantity: 10 } }
         ],
         neighbour: ['Drillpoint','Aeritha-Crafter','Prospector-7']
+      },
+      {
+        name: "Prospector-7",
+        type: "Minage",
+        max_stock: 1000,
+        inventory: {
+          exports: [
+            { commodity: "Ore", quantity: randomRange(200, 400) },
+            { commodity: "Gas", quantity: randomRange(180, 260) }
+          ],
+          imports: [
+            { commodity: "Medical-Supply", quantity: randomRange(35, 80) },
+            { commodity: "Explosive", quantity: randomRange(12, 30) }
+          ]
+        },
+        productionRules: [
+          { input: { commodity: "Explosive", quantity: 1 }, output: { commodity: "Ore", quantity: 5 } },
+          { input: { commodity: "Medical-Supply", quantity: 4 }, output: { commodity: "Gas", quantity: 14 } }
+        ],
+        neighbour: ['New-Paris']
+      },
+      {
+        name: "Drillpoint",
+        type: "Minage",
+        max_stock: 1000,
+        inventory: {
+          exports: [
+            { commodity: "Ore", quantity: randomRange(200, 400) },
+            { commodity: "Crystal", quantity: randomRange(160, 260) }
+          ],
+          imports: [
+            { commodity: "Medical-Supply", quantity: randomRange(35, 80) },
+            { commodity: "Explosive", quantity: randomRange(12, 30) }
+          ]
+        },
+        productionRules: [
+          { input: { commodity: "Explosive", quantity: 1 }, output: { commodity: "Ore", quantity: 5 } },
+          { input: { commodity: "Medical-Supply", quantity: 4 }, output: { commodity: "Crystal", quantity: 14 } }
+        ],
+        neighbour: ['New-Paris','Artemis-Foundry']
+      },
+      {
+        name: "Artemis-Foundry",
+        type: "Industrie",
+        max_stock: 1000,
+        inventory: {
+          exports: [
+            { commodity: "Construction-Material", quantity: randomRange(150, 280) }
+          ],
+          imports: [
+            { commodity: "Ore", quantity: randomRange(200, 400) },
+            { commodity: "Crystal", quantity: randomRange(150, 300) },
+            { commodity: "Scrap", quantity: randomRange(400, 450) }
+          ]
+        },
+        productionRules: [
+          { input: { commodity: "Ore", quantity: 10 }, output: { commodity: "Construction-Material", quantity: 8 } },
+          { input: { commodity: "Crystal", quantity: 3 }, output: { commodity: "Construction-Material", quantity: 4 } },
+          { input: { commodity: "Scrap", quantity: 8 }, output: { commodity: "Construction-Material", quantity: 1 } }
+        ],
+        neighbour: ['Drillpoint','Aeritha-Crafter']
+      },
+      {
+        name: "Aeritha-Crafter",
+        type: "Industrie",
+        max_stock: 1000,
+        inventory: {
+          exports: [
+            { commodity: "Explosive", quantity: randomRange(80, 170) },
+            { commodity: "Chemical", quantity: randomRange(100, 200) }
+          ],
+          imports: [
+            { commodity: "Ore", quantity: randomRange(200, 400) },
+            { commodity: "Gas", quantity: randomRange(150, 300) }
+          ]
+        },
+        productionRules: [
+          { input: { commodity: "Ore", quantity: 7 }, output: { commodity: "Explosive", quantity: 2 } },
+          { input: { commodity: "Gas", quantity: 9 }, output: { commodity: "Chemical", quantity: 6 } }
+        ],
+        neighbour: ['Artemis-Foundry','New-Paris']
       }
-      // 👉 ajoute tes autres stations ici
     ];
+
 
     // Ship spawn
     const spawnStation = stations[Math.floor(Math.random() * stations.length)];
@@ -371,28 +452,83 @@ app.get('/starsupply/station/:name/percentage', auth, async (req, res) => {
 //
 // ⚙️ Update automatique des stocks
 //
-async function updateStationsInventory() {
-  const games = await Game.find();
-  for (let game of games) {
+async function updateStationsInventory(userId, res) {
+  try {
+    const game = await Game.findOne({ userId });
+    if (!game) return;
+
     for (let station of game.stations) {
+      // Vérifie les règles de production
       for (let rule of station.productionRules) {
         let input = station.inventory.imports.find(i => i.commodity === rule.input.commodity);
         let output = station.inventory.exports.find(i => i.commodity === rule.output.commodity);
+
         if (input && input.quantity >= rule.input.quantity) {
           input.quantity -= rule.input.quantity;
+
           if (output) {
-            output.quantity = Math.min(station.max_stock, output.quantity + rule.output.quantity);
+            output.quantity = Math.min(
+              station.max_stock,
+              output.quantity + rule.output.quantity
+            );
           } else {
-            station.inventory.exports.push({ commodity: rule.output.commodity, quantity: rule.output.quantity });
+            station.inventory.exports.push({
+              commodity: rule.output.commodity,
+              quantity: rule.output.quantity
+            });
           }
         }
       }
+
+      // 🔴 Vérification des conditions de défaite
+      for (let imp of station.inventory.imports) {
+        if (imp.quantity <= 0) {
+          await handleGameOver(userId, res, "import épuisé", station.name, imp.commodity);
+          return; // stop la boucle
+        }
+      }
+
+      for (let exp of station.inventory.exports) {
+        if (exp.quantity >= station.max_stock) {
+          await handleGameOver(userId, res, "export saturé", station.name, exp.commodity);
+          return;
+        }
+      }
     }
+
     await game.save();
+    console.log("Inventaires mis à jour");
+
+  } catch (err) {
+    console.error("Erreur dans updateStationsInventory:", err.message);
   }
-  console.log("Inventaires mis à jour");
 }
+
+async function handleGameOver(userId, res, reason, station, resource) {
+  const game = await Game.findOne({ userId });
+  if (!game) return;
+
+  const duration = Math.floor((Date.now() - game.startTime) / 1000);
+
+  const user = await User.findById(userId);
+  if (duration > user.record) {
+    user.record = duration;
+    await user.save();
+  }
+
+  await Game.deleteOne({ _id: game._id });
+
+  // 🔥 Réponse claire côté API
+  res.status(200).json({
+    message: `Vous avez perdu à cause de ${reason}`,
+    station,
+    resource,
+    duration,
+    bestRecord: user.record
+  });
+};
+
 setTimeout(()=>{setInterval((updateStationsInventory), 90*1000)}, 2*1000)
 
 
-app.listen(50051, () => console.log('50051'));
+app.listen(50051, () => console.log('50051'))
