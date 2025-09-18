@@ -38,7 +38,7 @@ const Haul = new Ship({
   name: 'Haul',
   inventory_size : 64,
   inventory: [{
-    commodity: 'Medical Supplies',
+    commodity: 'Medical-Supply',
     quantity: 50
   }],
   position: 'Drillpoint'
@@ -49,8 +49,8 @@ const Whale = new Ship({
   name: 'Whale',
   inventory_size : 1000,
   inventory: [{
-    commodity: 'Medical Supplies',
-    quantity: 50
+    commodity: 'Ore',
+    quantity: 500
   }],
   position: 'Drillpoint'
 }) 
@@ -62,7 +62,7 @@ const newParis = new Station({
   inventory_size : 1000,
   inventory: {
     exports: [{
-      commodity: "Medical Supply",
+      commodity: "Medical-Supply",
       quantity: 500
     },
     {
@@ -70,11 +70,11 @@ const newParis = new Station({
       quantity: 600
     }],
     imports: [{
-      commodity: "Construction Material",
+      commodity: "Construction-Material",
       quantity: 120
     },
     {
-      commodity: 'Chemicals',
+      commodity: 'Chemical',
       quantity: 190
     }]
   },
@@ -96,7 +96,7 @@ const prospector7 = new Station({
       quantity: 300
     }],
     imports: [{
-      commodity: "Medical Supply",
+      commodity: "Medical-Supply",
       quantity: 240
     },
     {
@@ -122,7 +122,7 @@ const drillpoint = new Station({
       quantity: 650
     }],
     imports: [{
-      commodity: "Medical Supply",
+      commodity: "Medical-Supply",
       quantity: 140
     },
     {
@@ -140,7 +140,7 @@ const artemisFoundry = new Station({
   inventory_size : 1000,
   inventory: {
     exports: [{
-      commodity: "Construction Material",
+      commodity: "Construction-Material",
       quantity: 500
     },
     {
@@ -170,7 +170,7 @@ const aerithaCrafter = new Station({
       quantity: 500
     },
     {
-      commodity: "Chemicals",
+      commodity: "Chemical",
       quantity: 600
     }],
     imports: [{
@@ -217,6 +217,12 @@ app.get('/starsupply/stations', (req, res) => {
     name: 1,
     type: 1
   }).then(station => res.json({ 'Liste des Stations': station }))
+  .catch(error => res.status(404).json({ error }))
+})
+
+app.get('/starsupply/stations/:name/inventory', (req, res) => {
+  Station.findOne({name: req.params.name})
+  .then(station => res.json({ "Inventaire": station.inventory}))
   .catch(error => res.status(404).json({ error }))
 })
 
@@ -322,6 +328,32 @@ app.get('/starsupply/ship/:name/delivery/:supply/:quantity', async (req, res) =>
 
     res.json({ status: "Delivered successfully", ship, station });
 
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: err.message });
+  }
+});
+
+app.get('/starsupply/ship/:name/jump/:where', async (req, res) => {
+  try {
+    const { name, where } = req.params;
+
+    const ship = await Ship.findOne({ name });
+    if (!ship) return res.status(404).json({ error: "Ship not found" });
+
+    const station = await Station.findOne({ name: ship.position });
+    if (!station) return res.status(404).json({ error: "Station not found" });
+
+    // Vérifie que la destination est bien reliée
+    if (!station.neighbour.includes(where)) {
+      return res.status(400).json({ error: `No gate to ${where} from ${station.name}` });
+    }
+
+    // Met à jour la position du vaisseau
+    ship.position = where;
+    await ship.save();
+
+    res.json({ status: "Jump successful", newPosition: ship.position });
   } catch (err) {
     console.error(err);
     res.status(500).json({ error: err.message });
