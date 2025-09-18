@@ -518,7 +518,7 @@ async function handleGameOver(game, reason, station, resource) {
   console.log(`💀 Partie perdue (${reason}) sur ${station} (${resource})`);
 }
 
-setTimeout(()=>{setInterval((updateStationsInventory), 90*1000)}, 2*1000)
+setInterval((updateStationsInventory), 30*1000);
 
 
 app.listen(50051, () => console.log('50051'))
