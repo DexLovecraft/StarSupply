@@ -452,11 +452,18 @@ app.get('/starsupply/station/:name/percentage', auth, async (req, res) => {
 //
 // ⚙️ Update automatique des stocks
 //
-app.get('/starsupply/user/record', auth, async(req, res) => {
-  record = await User.findOne({ userId: req.auth.userId }).record
-  if (!record) record = 0;
-  res.status(200).json({ "record" : record})
-})
+app.get('/starsupply/user/record', auth, async (req, res) => {
+  try {
+    const user = await User.findById(req.auth.userId);
+    if (!user) return res.status(404).json({ error: "Utilisateur introuvable" });
+
+    const record = user.record || 0;
+    res.status(200).json({ record });
+  } catch (err) {
+    console.error("Erreur /user/record:", err.message);
+    res.status(500).json({ error: err.message });
+  }
+});
 
 
 async function updateStationsInventory(userId, res) {
