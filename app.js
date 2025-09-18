@@ -68,7 +68,7 @@ app.use(cors({
 }));
 
 app.get('/starsupply/ping', (req, res) => {
-  res.json({ message: "Ca marche" });
+  res.json({ message: "Ca fonctionne" });
 });
 
 //
@@ -518,7 +518,7 @@ async function handleGameOver(game, reason, station, resource) {
   console.log(`💀 Partie perdue (${reason}) sur ${station} (${resource})`);
 }
 
-setInterval((updateStationsInventory), 30*1000);
+setInterval((updateStationsInventory), 15*1000);
 
 
 app.listen(50051, () => console.log('50051'))
