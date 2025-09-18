@@ -7,7 +7,7 @@ const { Schema } = mongoose;
 const stationSchema = new Schema({
   name: String,
   type: String,
-  inventory_size : Number,
+  max_stock: Number,
   inventory: {
     exports: [{
       commodity: String,
@@ -29,7 +29,7 @@ const stationSchema = new Schema({
 
 const shipSchema = new Schema({
   name: String,
-  max_stock : Number,
+  inventory_size : Number,
   inventory : [{
     commodity: String,
     quantity: Number
