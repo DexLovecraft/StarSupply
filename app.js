@@ -62,7 +62,11 @@ function randomRange(min, max) {
 const app = express();
 app.use(express.json());
 
-app.use(cors());
+app.use(cors({
+  origin: "*",
+  methods: "GET,POST,PUT,DELETE,OPTIONS",
+  allowedHeaders: "Origin, X-Requested-With, Content-Type, Accept, Authorization"
+}));
 
 app.get('/starsupply/ping', (req, res) => {
   res.json({ message: "Ca marche" });
