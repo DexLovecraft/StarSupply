@@ -3,7 +3,6 @@
     "bcrypt": "^5.1.0",
     "express": "^5.1.0",
     "jsonwebtoken": "^9.0.0",
-    "latest": "^0.2.0",
     "mongoose": "^8.18.1"
   },
   "name": "starsupply",
