@@ -452,6 +452,13 @@ app.get('/starsupply/station/:name/percentage', auth, async (req, res) => {
 //
 // ⚙️ Update automatique des stocks
 //
+app.get('/starsupply/user/record', auth, async(req, res) => {
+  record = await User.findOne({ userId: req.auth.userId }).record
+  if (!record) record = 0;
+  res.status(200).json({ "record" : record})
+})
+
+
 async function updateStationsInventory(userId, res) {
   try {
     const game = await Game.findOne({ userId });
