@@ -466,81 +466,57 @@ app.get('/starsupply/user/record', auth, async (req, res) => {
 });
 
 
-async function updateStationsInventory(userId, res) {
+async function updateStationsInventory() {
   try {
-    const game = await Game.findOne({ userId });
-    if (!game) return;
+    const games = await Game.find(); // 🔹 on update toutes les parties
+    for (let game of games) {
+      for (let station of game.stations) {
+        for (let rule of station.productionRules) {
+          let input = station.inventory.imports.find(i => i.commodity === rule.input.commodity);
+          let output = station.inventory.exports.find(i => i.commodity === rule.output.commodity);
 
-    for (let station of game.stations) {
-      // Vérifie les règles de production
-      for (let rule of station.productionRules) {
-        let input = station.inventory.imports.find(i => i.commodity === rule.input.commodity);
-        let output = station.inventory.exports.find(i => i.commodity === rule.output.commodity);
+          if (input && input.quantity >= rule.input.quantity) {
+            input.quantity -= rule.input.quantity;
+            if (output) {
+              output.quantity = Math.min(station.max_stock, output.quantity + rule.output.quantity);
+            } else {
+              station.inventory.exports.push({ commodity: rule.output.commodity, quantity: rule.output.quantity });
+            }
+          }
+        }
 
-        if (input && input.quantity >= rule.input.quantity) {
-          input.quantity -= rule.input.quantity;
-
-          if (output) {
-            output.quantity = Math.min(
-              station.max_stock,
-              output.quantity + rule.output.quantity
-            );
-          } else {
-            station.inventory.exports.push({
-              commodity: rule.output.commodity,
-              quantity: rule.output.quantity
-            });
+        // 🔥 check conditions de défaite
+        for (let imp of station.inventory.imports) {
+          if (imp.quantity <= 0) {
+            await handleGameOver(game, `import épuisé`, station.name, imp.commodity);
+            return;
+          }
+        }
+        for (let exp of station.inventory.exports) {
+          if (exp.quantity >= station.max_stock) {
+            await handleGameOver(game, `export saturé`, station.name, exp.commodity);
+            return;
           }
         }
       }
-
-      // 🔴 Vérification des conditions de défaite
-      for (let imp of station.inventory.imports) {
-        if (imp.quantity <= 0) {
-          await handleGameOver(userId, res, "import épuisé", station.name, imp.commodity);
-          return; // stop la boucle
-        }
-      }
-
-      for (let exp of station.inventory.exports) {
-        if (exp.quantity >= station.max_stock) {
-          await handleGameOver(userId, res, "export saturé", station.name, exp.commodity);
-          return;
-        }
-      }
+      await game.save();
     }
-
-    await game.save();
     console.log("Inventaires mis à jour");
-
   } catch (err) {
-    console.error("Erreur dans updateStationsInventory:", err.message);
+    console.error("Erreur update:", err.message);
   }
 }
 
-async function handleGameOver(userId, res, reason, station, resource) {
-  const game = await Game.findOne({ userId });
-  if (!game) return;
-
+async function handleGameOver(game, reason, station, resource) {
   const duration = Math.floor((Date.now() - game.startTime) / 1000);
-
-  const user = await User.findById(userId);
+  const user = await User.findById(game.userId);
   if (duration > user.record) {
     user.record = duration;
     await user.save();
   }
-
   await Game.deleteOne({ _id: game._id });
-
-  // 🔥 Réponse claire côté API
-  res.status(200).json({
-    message: `Vous avez perdu à cause de ${reason}`,
-    station,
-    resource,
-    duration,
-    bestRecord: user.record
-  });
-};
+  console.log(`💀 Partie perdue (${reason}) sur ${station} (${resource})`);
+}
 
 setTimeout(()=>{setInterval((updateStationsInventory), 90*1000)}, 2*1000)
 
