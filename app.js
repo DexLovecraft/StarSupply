@@ -37,14 +37,22 @@ const shipSchema = new Schema({
   position: String
 })
 
+const userSchema = new Schema({
+  username: String,
+  password: String,
+  record: { type: Number, default: 0 } // en secondes ou minutes
+});
+
 const Station = mongoose.model('station', stationSchema);
 const Ship = mongoose.model('ship', shipSchema);
+const User = mongoose.model('user', userSchema);
 
 function randomRange(min, max) {
   return Math.floor(Math.random() * (max - min + 1)) + min;
 }
 
 const LCHBebop1 = new Ship({
+  type : "ship",
   name: 'LCH-Bebop-1',
   inventory_size : 496,
   inventory: [],
@@ -241,9 +249,9 @@ app.use(express.json());
 //app.use('url', routes)
 app.get('/starsupply/ping', (req, res) => {
   res.json({message: "Ca marche"});
-});
+})
 
-app.get('/starsupply/ships', (req, res) => {
+app.get('/starsupply/ship', (req, res) => {
   Ship.find({},{
     _id: 0,
     name: 1,
@@ -252,20 +260,20 @@ app.get('/starsupply/ships', (req, res) => {
   .catch(error => res.status(404).json({ error }))
 })
 
-app.get('/starsupply/ship/:name/inventory', (req, res) => {
-  Ship.findOne({name: req.params.name})
+app.get('/starsupply/ship/inventory', (req, res) => {
+  Ship.findOne({type : "ship"})
   .then(ship => res.json({ "Inventaire": ship.inventory}))
   .catch(error => res.status(404).json({ error }))
 })
 
-app.get('/starsupply/ship/:name/position', (req, res) => {
-  Ship.findOne({name: req.params.name})
+app.get('/starsupply/ship/position', (req, res) => {
+  Ship.findOne({type : "ship"})
   .then(ship => res.json({ "Position": ship.position}))
   .catch(error => res.status(404).json({ error }))
 })
 
-app.get('/starsupply/ship/:name/destination', (req, res) => {
-  Ship.findOne({name: req.params.name})
+app.get('/starsupply/ship/destination', (req, res) => {
+  Ship.findOne({type : "ship"})
   .then(ship => {
     Station.findOne({name: ship.position})
     .then(station => res.status(200).json({"Voyages possible" : station.neighbour}))
@@ -274,12 +282,12 @@ app.get('/starsupply/ship/:name/destination', (req, res) => {
   .catch(error => res.status(404).json({ error }))
 })
 
-app.get('/starsupply/ship/:name/load/:supply/:quantity', async (req, res) => {
+app.get('/starsupply/ship/load/:supply/:quantity', async (req, res) => {
   try {
-    const { name, supply, quantity } = req.params;
+    const { supply, quantity } = req.params;
     const qty = Number(quantity);
 
-    const ship = await Ship.findOne({ name });
+    const ship = await Ship.findOne({type : "ship"});
     if (!ship) return res.status(404).json({ error: "Ship not found" });
 
     const station = await Station.findOne({ name: ship.position });
@@ -319,12 +327,12 @@ app.get('/starsupply/ship/:name/load/:supply/:quantity', async (req, res) => {
   }
 });
 
-app.get('/starsupply/ship/:name/delivery/:supply/:quantity', async (req, res) => {
+app.get('/starsupply/ship/delivery/:supply/:quantity', async (req, res) => {
   try {
-    const { name, supply, quantity } = req.params;
+    const { supply, quantity } = req.params;
     const qty = Number(quantity);
 
-    const ship = await Ship.findOne({ name });
+    const ship = await Ship.findOne({type : "ship"});
     if (!ship) return res.status(404).json({ error: "Ship not found" });
 
     const station = await Station.findOne({ name: ship.position });
@@ -359,11 +367,11 @@ app.get('/starsupply/ship/:name/delivery/:supply/:quantity', async (req, res) =>
   }
 });
 
-app.get('/starsupply/ship/:name/jump/:where', async (req, res) => {
+app.get('/starsupply/ship/jump/:where', async (req, res) => {
   try {
-    const { name, where } = req.params;
+    const { where } = req.params;
 
-    const ship = await Ship.findOne({ name });
+    const ship = await Ship.findOne({type : "ship"});
     if (!ship) return res.status(404).json({ error: "Ship not found" });
 
     const station = await Station.findOne({ name: ship.position });
