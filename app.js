@@ -84,7 +84,7 @@ const newParis = new Station({
       output: { commodity: "Medical-Supply", quantity: 12 }
     }
   ],
-  neighbour: ['Drillpoint','Aeritha Crafter','Prospector-7']
+  neighbour: ['Drillpoint','Aeritha-Crafter','Prospector-7']
 })
 newParis.save().then(() => console.log("Station saved")).catch(err => console.error(err));
 
