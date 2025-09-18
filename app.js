@@ -61,14 +61,11 @@ function randomRange(min, max) {
 //
 const app = express();
 app.use(express.json());
-
-const allowedOrigin = process.env.CORS_ORIGIN || '*';
 app.use(cors({
-  origin: allowedOrigin,
+  origin: "https://starsupply.alexbalmes.dev", // ou ""
   methods: "GET,POST,PUT,DELETE,OPTIONS",
   allowedHeaders: "Origin, X-Requested-With, Content-Type, Accept, Authorization"
 }));
-app.options('*', cors());
 
 app.get('/starsupply/ping', (req, res) => {
   res.json({ message: "Ca marche" });
