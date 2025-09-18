@@ -44,9 +44,6 @@ function randomRange(min, max) {
   return Math.floor(Math.random() * (max - min + 1)) + min;
 }
 
-console.log(randomRange(5, 10)); // donnera 5, 6, 7, 8, 9 ou 10
-
-
 const LCHBebop1 = new Ship({
   name: 'LCH-Bebop-1',
   inventory_size : 496,
@@ -255,23 +252,6 @@ app.get('/starsupply/ships', (req, res) => {
   .catch(error => res.status(404).json({ error }))
 })
 
-
-app.get('/starsupply/stations', (req, res) => {
-  Station.find({},{
-    _id: 0,
-    name: 1,
-    type: 1
-  }).then(station => res.json({ 'Liste des Stations': station }))
-  .catch(error => res.status(404).json({ error }))
-})
-
-app.get('/starsupply/stations/:name/inventory', (req, res) => {
-  Station.findOne({name: req.params.name})
-  .then(station => res.json({ "Inventaire": station.inventory}))
-  .catch(error => res.status(404).json({ error }))
-})
-
-
 app.get('/starsupply/ship/:name/inventory', (req, res) => {
   Ship.findOne({name: req.params.name})
   .then(ship => res.json({ "Inventaire": ship.inventory}))
@@ -445,6 +425,48 @@ app.get('/starsupply/stations/:from/path/:to', async (req, res) => {
   }
 });
 
+app.get('/starsupply/stations', (req, res) => {
+  Station.find({},{
+    _id: 0,
+    name: 1,
+    type: 1
+  }).then(station => res.json({ 'Liste des Stations': station }))
+  .catch(error => res.status(404).json({ error }))
+})
+
+app.get('/starsupply/stations/:name/inventory', (req, res) => {
+  Station.findOne({name: req.params.name})
+  .then(station => res.json({ "Inventaire": station.inventory}))
+  .catch(error => res.status(404).json({ error }));
+})
+
+app.get('/starsupply/station/:name/percentage', async (req, res) => {
+    try {
+      const station = await Station.findOne({name : req.params.name});
+      if (!station) return res.status(404).json({ error: "Station not found" });
+
+      let percentageTable = {}
+      let importPercentageTable = []
+      let exportPercentageTable = []
+
+      station.inventory.imports.forEach(imports => {
+        let importName = imports.commodity
+        let importPercent = Math.round((imports.quantity / station.max_stock) * 100)
+        importPercentageTable.push({[importName] : importPercent})
+      })
+
+      station.inventory.exports.forEach(exports => {
+        let exportName = exports.commodity
+        let exportPercent = Math.round((exports.quantity / station.max_stock) * 100)
+        exportPercentageTable.push({[exportName] : exportPercent})
+      })
+      percentageTable = {export: exportPercentageTable, import: importPercentageTable}
+      res.status(200).json({percentageTable})
+    } catch (err) {
+    console.error("Erreur:", err.message);
+  }
+})
+
 async function updateStationsInventory() {
   try {
     const stations = await Station.find();
@@ -482,7 +504,7 @@ async function updateStationsInventory() {
   }
 }
 
-setInterval(updateStationsInventory, 10*1000);
+setInterval(updateStationsInventory, 5*60*1000);
 
 app.listen(50051, function(){
   console.log('50051')
