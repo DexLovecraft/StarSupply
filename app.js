@@ -54,7 +54,7 @@ function randomRange(min, max) {
 const LCHBebop1 = new Ship({
   type : "ship",
   name: 'LCH-Bebop-1',
-  inventory_size : 496,
+  inventory_size : 324,
   inventory: [],
   position: 'Drillpoint'
 }) 
@@ -67,29 +67,29 @@ const newParis = new Station({
   inventory: {
     exports: [{
       commodity: "Medical-Supply",
-      quantity: randomRange(80, 200) 
+      quantity: randomRange(100, 200) 
     },
     {
       commodity: "Scrap",
-      quantity: randomRange(50, 120) 
+      quantity: randomRange(700, 900) 
     }],
     imports: [{
       commodity: "Construction-Material",
-      quantity: randomRange(150, 300) 
+      quantity: randomRange(220, 380) 
     },
     {
       commodity: 'Chemical',
-      quantity: randomRange(50, 150) 
+      quantity: randomRange(60, 140) 
     }]
   },
   productionRules: [
     {
       input: { commodity: "Construction-Material", quantity: 10 },
-      output: { commodity: "Scrap", quantity: 5 }
+      output: { commodity: "Scrap", quantity: 10 }
     },
     {
       input: { commodity: "Chemical", quantity: 4 },
-      output: { commodity: "Medical-Supply", quantity: 12 }
+      output: { commodity: "Medical-Supply", quantity: 10 }
     }
   ],
   neighbour: ['Drillpoint','Aeritha-Crafter','Prospector-7']
@@ -107,15 +107,15 @@ const prospector7 = new Station({
     },
     {
       commodity: "Gas",
-      quantity: randomRange(150, 250) 
+      quantity: randomRange(180, 260) 
     }],
     imports: [{
       commodity: "Medical-Supply",
-      quantity: randomRange(50, 120) 
+      quantity: randomRange(35, 80) 
     },
     {
       commodity: 'Explosive',
-      quantity: randomRange(20, 60) 
+      quantity: randomRange(12, 30) 
     }]
   },
   productionRules: [
@@ -125,7 +125,7 @@ const prospector7 = new Station({
     },
     {
       input: { commodity: "Medical-Supply", quantity: 4 },
-      output: { commodity: "Gas", quantity: 12 }
+      output: { commodity: "Gas", quantity: 14 }
     }
   ],
   neighbour: ['New-Paris']
@@ -143,15 +143,15 @@ const drillpoint = new Station({
     },
     {
       commodity: "Crystal",
-      quantity: randomRange(150, 250) 
+      quantity: randomRange(160, 260) 
     }],
     imports: [{
       commodity: "Medical-Supply",
-      quantity: randomRange(50, 120) 
+      quantity: randomRange(35, 80) 
     },
     {
       commodity: 'Explosive',
-      quantity: randomRange(20, 60) 
+      quantity: randomRange(12, 30) 
     }]
   },
   productionRules: [
@@ -161,7 +161,7 @@ const drillpoint = new Station({
     },
     {
       input: { commodity: "Medical-Supply", quantity: 4 },
-      output: { commodity: "Crystal", quantity: 12 }
+      output: { commodity: "Crystal", quantity: 14 }
     }
   ],
   neighbour: ['New-Paris','Artemis-Foundry']
@@ -175,7 +175,7 @@ const artemisFoundry = new Station({
   inventory: {
     exports: [{
       commodity: "Construction-Material",
-      quantity: randomRange(120, 250) 
+      quantity: randomRange(150, 280) 
     }],
     imports: [{
       commodity: "Ore",
@@ -184,7 +184,11 @@ const artemisFoundry = new Station({
     {
       commodity: 'Crystal',
       quantity: randomRange(150, 300) 
-    }]
+    },
+    {
+      commodity: 'Scrap',
+      quantity: randomRange(400, 450) 
+    }],
   },
   productionRules: [
     {
@@ -192,8 +196,12 @@ const artemisFoundry = new Station({
       output: { commodity: "Construction-Material", quantity: 8}
     },
     {
-      input: { commodity: "Crystal", quantity: 4 },
-      output: { commodity: "Construction-Material", quantity: 3 }
+      input: { commodity: "Crystal", quantity: 3 },
+      output: { commodity: "Construction-Material", quantity: 4 }
+    },
+     {
+      input: { commodity: "Scrap", quantity: 8 },
+      output: { commodity: "Construction-Material", quantity: 1}
     }
   ],
   neighbour: ['Drillpoint','Aeritha-Crafter']
@@ -207,11 +215,11 @@ const aerithaCrafter = new Station({
   inventory: {
     exports: [{
       commodity: "Explosive",
-      quantity: randomRange(60, 150) 
+      quantity: randomRange(80, 170) 
     },
     {
       commodity: "Chemical",
-      quantity: randomRange(80, 180) 
+      quantity: randomRange(100, 200) 
     }],
     imports: [{
       commodity: "Ore",
@@ -251,7 +259,7 @@ app.get('/starsupply/ping', (req, res) => {
   res.json({message: "Ca marche"});
 })
 
-app.get('/starsupply/ship', (req, res) => {
+app.get('/starsupply/ship', auth ,(req, res) => {
   Ship.find({},{
     _id: 0,
     name: 1,
@@ -260,19 +268,19 @@ app.get('/starsupply/ship', (req, res) => {
   .catch(error => res.status(404).json({ error }))
 })
 
-app.get('/starsupply/ship/inventory', (req, res) => {
+app.get('/starsupply/ship/inventory', auth , (req, res) => {
   Ship.findOne({type : "ship"})
   .then(ship => res.json({ "Inventaire": ship.inventory}))
   .catch(error => res.status(404).json({ error }))
 })
 
-app.get('/starsupply/ship/position', (req, res) => {
+app.get('/starsupply/ship/position', auth , (req, res) => {
   Ship.findOne({type : "ship"})
   .then(ship => res.json({ "Position": ship.position}))
   .catch(error => res.status(404).json({ error }))
 })
 
-app.get('/starsupply/ship/destination', (req, res) => {
+app.get('/starsupply/ship/destination', auth , (req, res) => {
   Ship.findOne({type : "ship"})
   .then(ship => {
     Station.findOne({name: ship.position})
@@ -282,7 +290,7 @@ app.get('/starsupply/ship/destination', (req, res) => {
   .catch(error => res.status(404).json({ error }))
 })
 
-app.get('/starsupply/ship/load/:supply/:quantity', async (req, res) => {
+app.get('/starsupply/ship/load/:supply/:quantity', auth , async (req, res) => {
   try {
     const { supply, quantity } = req.params;
     const qty = Number(quantity);
@@ -327,7 +335,7 @@ app.get('/starsupply/ship/load/:supply/:quantity', async (req, res) => {
   }
 });
 
-app.get('/starsupply/ship/delivery/:supply/:quantity', async (req, res) => {
+app.get('/starsupply/ship/delivery/:supply/:quantity', auth , async (req, res) => {
   try {
     const { supply, quantity } = req.params;
     const qty = Number(quantity);
@@ -367,7 +375,7 @@ app.get('/starsupply/ship/delivery/:supply/:quantity', async (req, res) => {
   }
 });
 
-app.get('/starsupply/ship/jump/:where', async (req, res) => {
+app.get('/starsupply/ship/jump/:where', auth , async (req, res) => {
   try {
     const { where } = req.params;
 
@@ -394,7 +402,7 @@ app.get('/starsupply/ship/jump/:where', async (req, res) => {
 });
 
 
-app.get('/starsupply/stations/:from/path/:to', async (req, res) => {
+app.get('/starsupply/stations/:from/path/:to', auth , async (req, res) => {
   try {
     const { from, to } = req.params;
 
@@ -436,7 +444,7 @@ app.get('/starsupply/stations/:from/path/:to', async (req, res) => {
   }
 });
 
-app.get('/starsupply/stations', (req, res) => {
+app.get('/starsupply/stations', auth , (req, res) => {
   Station.find({},{
     _id: 0,
     name: 1,
@@ -445,13 +453,13 @@ app.get('/starsupply/stations', (req, res) => {
   .catch(error => res.status(404).json({ error }))
 })
 
-app.get('/starsupply/stations/:name/inventory', (req, res) => {
+app.get('/starsupply/stations/:name/inventory', auth , (req, res) => {
   Station.findOne({name: req.params.name})
   .then(station => res.json({ "Inventaire": station.inventory}))
   .catch(error => res.status(404).json({ error }));
 })
 
-app.get('/starsupply/station/:name/percentage', async (req, res) => {
+app.get('/starsupply/station/:name/percentage', auth , async (req, res) => {
     try {
       const station = await Station.findOne({name : req.params.name});
       if (!station) return res.status(404).json({ error: "Station not found" });
@@ -515,7 +523,50 @@ async function updateStationsInventory() {
   }
 }
 
-setInterval(updateStationsInventory, 5*60*1000);
+app.post('/startsupply/signup', auth , (req, res) => {
+    bcrypt.hash(req.body.password, 10)
+        .then(hash => {
+            const user = new User({
+                username : req.body.username,
+                password : hash,
+                record: {},
+            });
+            user.save()
+                .then(res.status(201).json({ message : "Utilisateur créé" }))
+                .catch(error => res.status(500).json({error}));
+        })
+        .catch(error => res.status(500).json({error}));
+});
+
+app.post('/startsupply/login', (req, res) => {
+    setTimeout(() => {
+        User.findOne({username : req.body.username})
+        .then(user => {
+            if(!user){
+                return res.status(401).json({ message : "paire Email/Mot de passe invalide"})
+            };
+            bcrypt.compare(req.body.password, user.password)
+                .then(valid => {
+                    if(!valid){
+                        return res.status(401).json({ message : "paire Email/Mot de passe invalide"})
+                    };
+                    res.status(200).json({
+                        userId : user._id,
+                        token: jwt.sign(
+                            { userId: user._id },
+                            '$2a$12$dCCL6qWZNv1Zr5UpY4NGNOLlAcTcAalOQyU0YB9K35J5fwHhwnt',
+                            { expiresIn: '24h' }
+                        )
+ 
+                    });
+                })
+                .catch(error => res.status(500).json({error}));
+        })
+        .catch(error => res.status(500).json({error}));
+      }, 500);
+});
+
+setInterval(updateStationsInventory, 90*1000);
 
 app.listen(50051, function(){
   console.log('50051')
