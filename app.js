@@ -4,7 +4,7 @@ const jwt = require("jsonwebtoken");
 const auth = require('./auth');
 const cors = require('cors');
 const mongoose = require('mongoose');
-mongoose.connect('mongodb://mongo:27017/starsupplydb');
+mongoose.connect(process.env.MONGO_URL || 'mongodb://mongo:27017/starsupplydb');
 const { Schema } = mongoose;
 
 //
@@ -62,13 +62,13 @@ function randomRange(min, max) {
 const app = express();
 app.use(express.json());
 
-app.options('*', cors()); 
-
+const allowedOrigin = process.env.CORS_ORIGIN || '*';
 app.use(cors({
-  origin: "*",
+  origin: allowedOrigin,
   methods: "GET,POST,PUT,DELETE,OPTIONS",
   allowedHeaders: "Origin, X-Requested-With, Content-Type, Accept, Authorization"
 }));
+app.options('*', cors());
 
 app.get('/starsupply/ping', (req, res) => {
   res.json({ message: "Ca marche" });
@@ -77,7 +77,7 @@ app.get('/starsupply/ping', (req, res) => {
 //
 // 🔐 Auth
 //
-app.post('/startsupply/signup', (req, res) => {
+app.post('/starsupply/signup', (req, res) => {
   bcrypt.hash(req.body.password, 10)
     .then(hash => {
       const user = new User({
@@ -91,7 +91,7 @@ app.post('/startsupply/signup', (req, res) => {
     .catch(error => res.status(500).json({ error }));
 });
 
-app.post('/startsupply/login', (req, res) => {
+app.post('/starsupply/login', (req, res) => {
   User.findOne({ username: req.body.username })
     .then(user => {
       if (!user) return res.status(401).json({ message: "Utilisateur inconnu" });
@@ -102,7 +102,7 @@ app.post('/startsupply/login', (req, res) => {
             userId: user._id,
             token: jwt.sign(
               { userId: user._id },
-              'SUPER_SECRET_KEY', // ⚠️ à mettre dans .env
+              process.env.JWT_SECRET, // ⚠️ à mettre dans .env
               { expiresIn: '24h' }
             )
           });
