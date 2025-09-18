@@ -390,30 +390,33 @@ app.get('/starsupply/stations/:from/path/:to', async (req, res) => {
   try {
     const { from, to } = req.params;
 
-    // Vérifie que les stations existent
     const startStation = await Station.findOne({ name: from });
     const endStation = await Station.findOne({ name: to });
     if (!startStation || !endStation) {
       return res.status(404).json({ error: "Station not found" });
     }
 
-    // BFS setup
-    let queue = [[from]];   // file de chemins possibles
+    let queue = [[from]];
     let visited = new Set([from]);
 
     while (queue.length > 0) {
-      let path = queue.shift();       // prend le premier chemin de la file
-      let current = path[path.length - 1]; // dernière station du chemin
+      let path = queue.shift();
+      let current = path[path.length - 1];
 
       if (current === to) {
-        return res.json({ path });   // trouvé !
+        return res.json({ path });
       }
 
       const station = await Station.findOne({ name: current });
+      if (!station) {
+        console.warn(`⚠️ Station "${current}" not found in DB`);
+        continue;
+      }
+
       for (let neighbour of station.neighbour) {
         if (!visited.has(neighbour)) {
           visited.add(neighbour);
-          queue.push([...path, neighbour]); // étend le chemin
+          queue.push([...path, neighbour]);
         }
       }
     }
