@@ -386,7 +386,7 @@ async function updateStationsInventory() {
   }
   console.log("Inventaires mis à jour");
 }
-setTimeout((setInterval(updateStationsInventory, 90*1000)), 2*1000)
+setTimeout(()=>{setInterval((updateStationsInventory), 90*1000)}, 2*1000)
 
 
 app.listen(50051, () => console.log('50051'));
