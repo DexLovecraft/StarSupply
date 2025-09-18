@@ -2,6 +2,7 @@ const express = require('express');
 const bcrypt = require("bcrypt");
 const jwt = require("jsonwebtoken");
 const auth = require('./auth');
+const cors = require('cors');
 const mongoose = require('mongoose');
 mongoose.connect('mongodb://mongo:27017/starsupplydb');
 const { Schema } = mongoose;
@@ -60,6 +61,8 @@ function randomRange(min, max) {
 //
 const app = express();
 app.use(express.json());
+
+app.use(cors());
 
 app.get('/starsupply/ping', (req, res) => {
   res.json({ message: "Ca marche" });
