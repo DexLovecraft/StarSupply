@@ -18,12 +18,18 @@ const stationSchema = new Schema({
       quantity: Number
     }]
   },
+  productionRules: [
+    {
+      input: { commodity: String, quantity: Number },
+      output: { commodity: String, quantity: Number }
+    }
+  ],
   neighbour : [String]
 });
 
 const shipSchema = new Schema({
   name: String,
-  inventory_size : Number,
+  max_stock : Number,
   inventory : [{
     commodity: String,
     quantity: Number
@@ -34,50 +40,53 @@ const shipSchema = new Schema({
 const Station = mongoose.model('station', stationSchema);
 const Ship = mongoose.model('ship', shipSchema);
 
-const Haul = new Ship({
-  name: 'Haul',
-  inventory_size : 64,
-  inventory: [{
-    commodity: 'Medical-Supply',
-    quantity: 50
-  }],
-  position: 'Drillpoint'
-}) 
-Haul.save().then(() => console.log("Ship saved")).catch(err => console.error(err));
+function randomRange(min, max) {
+  return Math.floor(Math.random() * (max - min + 1)) + min;
+}
 
-const Whale = new Ship({
-  name: 'Whale',
-  inventory_size : 1000,
-  inventory: [{
-    commodity: 'Ore',
-    quantity: 500
-  }],
+console.log(randomRange(5, 10)); // donnera 5, 6, 7, 8, 9 ou 10
+
+
+const LCHBebop1 = new Ship({
+  name: 'LCH-Bebop-1',
+  inventory_size : 496,
+  inventory: [],
   position: 'Drillpoint'
 }) 
-Whale.save().then(() => console.log("Ship saved")).catch(err => console.error(err));
+LCHBebop1.save().then(() => console.log("Ship saved")).catch(err => console.error(err));
 
 const newParis = new Station({
   name: "New-Paris",
   type: "Habitat",
-  inventory_size : 1000,
+  max_stock : 1000,
   inventory: {
     exports: [{
       commodity: "Medical-Supply",
-      quantity: 500
+      quantity: randomRange(80, 200) 
     },
     {
       commodity: "Scrap",
-      quantity: 600
+      quantity: randomRange(50, 120) 
     }],
     imports: [{
       commodity: "Construction-Material",
-      quantity: 120
+      quantity: randomRange(150, 300) 
     },
     {
       commodity: 'Chemical',
-      quantity: 190
+      quantity: randomRange(50, 150) 
     }]
   },
+  productionRules: [
+    {
+      input: { commodity: "Construction-Material", quantity: 10 },
+      output: { commodity: "Scrap", quantity: 5 }
+    },
+    {
+      input: { commodity: "Chemical", quantity: 4 },
+      output: { commodity: "Medical-Supply", quantity: 12 }
+    }
+  ],
   neighbour: ['Drillpoint','Aeritha Crafter','Prospector-7']
 })
 newParis.save().then(() => console.log("Station saved")).catch(err => console.error(err));
@@ -85,25 +94,35 @@ newParis.save().then(() => console.log("Station saved")).catch(err => console.er
 const prospector7 = new Station({
   name: "Prospector-7",
   type: "Minage",
-  inventory_size : 1000,
+  max_stock : 1000,
   inventory: {
     exports: [{
       commodity: "Ore",
-      quantity: 550
+      quantity: randomRange(200, 400) 
     },
     {
       commodity: "Gas",
-      quantity: 300
+      quantity: randomRange(150, 250) 
     }],
     imports: [{
       commodity: "Medical-Supply",
-      quantity: 240
+      quantity: randomRange(50, 120) 
     },
     {
       commodity: 'Explosive',
-      quantity: 90
+      quantity: randomRange(20, 60) 
     }]
   },
+  productionRules: [
+    {
+      input: { commodity: "Explosive", quantity: 1 },
+      output: { commodity: "Ore", quantity: 5 }
+    },
+    {
+      input: { commodity: "Medical-Supply", quantity: 4 },
+      output: { commodity: "Gas", quantity: 12 }
+    }
+  ],
   neighbour: ['New-Paris']
 })
 prospector7.save().then(() => console.log("Station saved")).catch(err => console.error(err));
@@ -111,25 +130,35 @@ prospector7.save().then(() => console.log("Station saved")).catch(err => console
 const drillpoint = new Station({
   name: "Drillpoint",
   type: "Minage",
-  inventory_size : 1000,
+  max_stock : 1000,
   inventory: {
     exports: [{
       commodity: "Ore",
-      quantity: 400
+      quantity: randomRange(200, 400) 
     },
     {
       commodity: "Crystal",
-      quantity: 650
+      quantity: randomRange(150, 250) 
     }],
     imports: [{
       commodity: "Medical-Supply",
-      quantity: 140
+      quantity: randomRange(50, 120) 
     },
     {
       commodity: 'Explosive',
-      quantity: 210
+      quantity: randomRange(20, 60) 
     }]
   },
+  productionRules: [
+    {
+      input: { commodity: "Explosive", quantity: 1 },
+      output: { commodity: "Ore", quantity: 5 }
+    },
+    {
+      input: { commodity: "Medical-Supply", quantity: 4 },
+      output: { commodity: "Crystal", quantity: 12 }
+    }
+  ],
   neighbour: ['New-Paris','Artemis-Foundry']
 })
 drillpoint.save().then(() => console.log("Station saved")).catch(err => console.error(err));
@@ -137,25 +166,31 @@ drillpoint.save().then(() => console.log("Station saved")).catch(err => console.
 const artemisFoundry = new Station({
   name: "Artemis-Foundry",
   type: "Industrie",
-  inventory_size : 1000,
+  max_stock : 1000,
   inventory: {
     exports: [{
       commodity: "Construction-Material",
-      quantity: 500
-    },
-    {
-      commodity: "PCB",
-      quantity: 600
+      quantity: randomRange(120, 250) 
     }],
     imports: [{
       commodity: "Ore",
-      quantity: 120
+      quantity: randomRange(200, 400) 
     },
     {
       commodity: 'Crystal',
-      quantity: 190
+      quantity: randomRange(150, 300) 
     }]
   },
+  productionRules: [
+    {
+      input: { commodity: "Ore", quantity: 10 },
+      output: { commodity: "Construction-Material", quantity: 8}
+    },
+    {
+      input: { commodity: "Crystal", quantity: 4 },
+      output: { commodity: "Construction-Material", quantity: 3 }
+    }
+  ],
   neighbour: ['Drillpoint','Aeritha-Crafter']
 })
 artemisFoundry.save().then(() => console.log("Station saved")).catch(err => console.error(err));
@@ -163,25 +198,35 @@ artemisFoundry.save().then(() => console.log("Station saved")).catch(err => cons
 const aerithaCrafter = new Station({
   name: "Aeritha-Crafter",
   type: "Industrie",
-  inventory_size : 1000,
+  max_stock : 1000,
   inventory: {
     exports: [{
       commodity: "Explosive",
-      quantity: 500
+      quantity: randomRange(60, 150) 
     },
     {
       commodity: "Chemical",
-      quantity: 600
+      quantity: randomRange(80, 180) 
     }],
     imports: [{
       commodity: "Ore",
-      quantity: 120
+      quantity: randomRange(200, 400) 
     },
     {
       commodity: 'Gas',
-      quantity: 190
+      quantity: randomRange(150, 300) 
     }]
   },
+  productionRules: [
+    {
+      input: { commodity: "Ore", quantity: 7 },
+      output: { commodity: "Explosive", quantity: 2 }
+    },
+    {
+      input: { commodity: "Gas", quantity: 9 },
+      output: { commodity: "Chemical", quantity: 6 }
+    }
+  ],
   neighbour: ['Artemis-Foundry','New-Paris']
 })
 aerithaCrafter.save().then(() => console.log("Station saved")).catch(err => console.error(err));
@@ -313,7 +358,7 @@ app.get('/starsupply/ship/:name/delivery/:supply/:quantity', async (req, res) =>
 
     // Vérifie que la station accepte ce produit
     let imported = station.inventory.imports.find(i => i.commodity === supply);
-    if (!imported) {
+    if (!imported || station.max_stock < imported.quantity + qty) {
       return res.status(400).json({ error: "Station does not accept this supply" });
     }
 
@@ -359,6 +404,85 @@ app.get('/starsupply/ship/:name/jump/:where', async (req, res) => {
     res.status(500).json({ error: err.message });
   }
 });
+
+
+app.get('/starsupply/stations/:from/path/:to', async (req, res) => {
+  try {
+    const { from, to } = req.params;
+
+    // Vérifie que les stations existent
+    const startStation = await Station.findOne({ name: from });
+    const endStation = await Station.findOne({ name: to });
+    if (!startStation || !endStation) {
+      return res.status(404).json({ error: "Station not found" });
+    }
+
+    // BFS setup
+    let queue = [[from]];   // file de chemins possibles
+    let visited = new Set([from]);
+
+    while (queue.length > 0) {
+      let path = queue.shift();       // prend le premier chemin de la file
+      let current = path[path.length - 1]; // dernière station du chemin
+
+      if (current === to) {
+        return res.json({ path });   // trouvé !
+      }
+
+      const station = await Station.findOne({ name: current });
+      for (let neighbour of station.neighbour) {
+        if (!visited.has(neighbour)) {
+          visited.add(neighbour);
+          queue.push([...path, neighbour]); // étend le chemin
+        }
+      }
+    }
+
+    res.status(404).json({ error: `No path found from ${from} to ${to}` });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: err.message });
+  }
+});
+
+async function updateStationsInventory() {
+  try {
+    const stations = await Station.find();
+
+    for (let station of stations) {
+      for (let rule of station.productionRules) {
+        // Cherche la ressource d'entrée
+        let input = station.inventory.imports.find(i => i.commodity === rule.input.commodity);
+        let output = station.inventory.exports.find(i => i.commodity === rule.output.commodity);
+
+        // Vérifie que l'import existe et est suffisant
+        if (input && input.quantity >= rule.input.quantity) {
+          input.quantity -= rule.input.quantity;
+
+          if (output) {
+            // Vérifie max_stock avant d’ajouter
+            output.quantity = Math.min(
+              station.max_stock,
+              output.quantity + rule.output.quantity
+            );
+          } else {
+            station.inventory.exports.push({
+              commodity: rule.output.commodity,
+              quantity: rule.output.quantity
+            });
+          }
+        }
+      }
+      await station.save();
+    }
+
+    console.log("Inventaires mis à jour");
+  } catch (err) {
+    console.error("Erreur dans updateStationsInventory:", err.message);
+  }
+}
+
+setInterval(updateStationsInventory, 10*1000);
 
 app.listen(50051, function(){
   console.log('50051')
