@@ -246,7 +246,10 @@ app.post('/starsupply/game/start', auth, async (req, res) => {
       ship,
       stations
     });
-    gameOn = true
+    
+    gameOn = true;
+    startInventoryLoop();
+
     await game.save();
     res.status(201).json({ message: "Game started", gameId: game._id, spawn: spawnStation.name });
   } catch (err) {
@@ -270,7 +273,9 @@ app.post('/starsupply/game/reset', auth, async (req, res) => {
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
-  gameOn = false
+  gameOn = false;
+  stopInventoryLoop();
+
 });
 
 app.put('/starsupply/game/speedup', auth,(req, res) => {
@@ -566,16 +571,24 @@ async function handleGameOver(game, reason, station, resource) {
   user.history = user.history.slice(0, 10);
   
   gameOn = false
+  stopInventoryLoop()
   await user.save();
   await Game.deleteOne({ _id: game._id });
   console.log(`💀 Partie perdue (${reason}) sur ${station} (${resource})`);
 }
+let intervalId = null;
 
-if (gameOn){
-  if(speedUp){
-    setInterval((updateStationsInventory), 3*1000);
-  }
-  setInterval((updateStationsInventory), 15*1000);
+function startInventoryLoop() {
+  if (intervalId) clearInterval(intervalId); // supprime l'ancien si existe
+  const delay = speedUp ? 3000 : 15000;
+  intervalId = setInterval(updateStationsInventory, delay);
+  console.log(`⏱️ Boucle démarrée avec intervalle ${delay / 1000}s`);
+}
+
+function stopInventoryLoop() {
+  if (intervalId) clearInterval(intervalId);
+  intervalId = null;
+  console.log("⏹️ Boucle arrêtée");
 }
 
 app.listen(50051, () => console.log('50051'))
