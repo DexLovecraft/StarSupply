@@ -261,21 +261,12 @@ app.post('/starsupply/game/reset', auth, async (req, res) => {
   try {
     const game = await Game.findOne({ userId: req.auth.userId });
     if (!game) return res.status(404).json({ error: "No game running" });
-
-    const duration = Math.floor((Date.now() - game.startTime) / 1000);
-    const user = await User.findById(req.auth.userId);
-    if (duration > user.record) {
-      user.record = duration;
-      await user.save();
-    }
-    await Game.deleteOne({ _id: game._id });
-    res.json({ message: "Game reset", duration, bestRecord: user.record });
-  } catch (err) {
-    res.status(500).json({ error: err.message });
+    await handleGameOver(game, `Quitter avant la fin`, 'Quit', 'Quit');
+    res.status(200).json({ message: "Game reset"});
   }
-  gameOn = false;
-  stopInventoryLoop();
-
+  catch (err) {
+    res.status(500).json({ error: err.message });
+  };
 });
 
 app.put('/starsupply/game/speedup', auth,(req, res) => {
