@@ -63,6 +63,8 @@ function randomRange(min, max) {
   return Math.floor(Math.random() * (max - min + 1)) + min;
 }
 
+let speedUp = false
+
 //
 // 🔹 App
 //
@@ -268,6 +270,11 @@ app.post('/starsupply/game/reset', auth, async (req, res) => {
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
+});
+
+app.put('/starsupply/game/speedup', auth, async (req, res) => {
+  speedUp = speedUp ? false : true
+  res.json({ speedUp }).status(200)
 });
 
 app.get('/starsupply/game/state', auth, async (req, res) => {
@@ -562,7 +569,15 @@ async function handleGameOver(game, reason, station, resource) {
   console.log(`💀 Partie perdue (${reason}) sur ${station} (${resource})`);
 }
 
-setInterval((updateStationsInventory), 15*1000);
+
+
+if (gameOn){
+  if(speedUp){
+    setInterval((updateStationsInventory), 3*1000);
+  }
+  setInterval((updateStationsInventory), 15*1000);
+}
+a
 
 
 app.listen(50051, () => console.log('50051'))
