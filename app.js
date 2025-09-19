@@ -64,7 +64,7 @@ function randomRange(min, max) {
 }
 
 let speedUp = false
-
+let gameOn = false
 //
 // 🔹 App
 //
@@ -246,7 +246,7 @@ app.post('/starsupply/game/start', auth, async (req, res) => {
       ship,
       stations
     });
-
+    gameOn = true
     await game.save();
     res.status(201).json({ message: "Game started", gameId: game._id, spawn: spawnStation.name });
   } catch (err) {
@@ -270,11 +270,12 @@ app.post('/starsupply/game/reset', auth, async (req, res) => {
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
+  gameOn = false
 });
 
-app.put('/starsupply/game/speedup', auth, async (req, res) => {
-  speedUp = speedUp ? false : true
-  res.json({ speedUp }).status(200)
+app.put('/starsupply/game/speedup', auth,(req, res) => {
+  speedUp = speedUp ? false : true;
+  res.status(200).json({ speedUp });
 });
 
 app.get('/starsupply/game/state', auth, async (req, res) => {
@@ -563,7 +564,8 @@ async function handleGameOver(game, reason, station, resource) {
 
   // 🔹 Conserver uniquement les 10 dernières
   user.history = user.history.slice(0, 10);
-
+  
+  gameOn = false
   await user.save();
   await Game.deleteOne({ _id: game._id });
   console.log(`💀 Partie perdue (${reason}) sur ${station} (${resource})`);
