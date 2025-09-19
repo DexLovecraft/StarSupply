@@ -36,7 +36,14 @@ const shipSchema = new Schema({
 const userSchema = new Schema({
   username: String,
   password: String,
-  record: { type: Number, default: 0 }
+  record: { type: Number, default: 0 },
+  history: [{
+    durationMonths: Number,    
+    reason: String,
+    station: String,
+    resource: String,
+    endedAt: { type: Date, default: Date.now }
+  }]
 });
 
 const gameSchema = new Schema({
@@ -263,6 +270,19 @@ app.post('/starsupply/game/reset', auth, async (req, res) => {
   }
 });
 
+app.get('/starsupply/game/state', auth, async (req, res) => {
+  const game = await Game.findOne({ userId: req.auth.userId });
+  const user = await User.findById(req.auth.userId);
+
+  if (!game) {
+    const last = user.history?.[0] || null;
+    return res.json({ running: false, lastGameOver: last });
+  }
+
+  res.json({ running: true });
+});
+
+
 //
 // 🚀 Ship routes
 //
@@ -465,6 +485,15 @@ app.get('/starsupply/user/record', auth, async (req, res) => {
   }
 });
 
+app.get('/starsupply/user/history', auth, async (req, res) => {
+  try {
+    const user = await User.findById(req.auth.userId);
+    if (!user) return res.status(404).json({ error: "Utilisateur introuvable" });
+    res.json({ history: user.history || [] });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
 
 async function updateStationsInventory() {
   try {
@@ -508,12 +537,27 @@ async function updateStationsInventory() {
 }
 
 async function handleGameOver(game, reason, station, resource) {
-  const duration = Math.floor((Date.now() - game.startTime) / 1000);
+  const durationSec = Math.floor((Date.now() - game.startTime) / 1000);
+  const durationMonths = Math.floor(durationSec / 60);
   const user = await User.findById(game.userId);
-  if (duration > user.record) {
-    user.record = duration;
-    await user.save();
+
+  // Record
+  if (durationMonths > user.record) {
+    user.record = durationMonths;
   }
+
+  // 🔹 Ajouter une entrée dans l'historique
+  user.history.unshift({
+    durationMonths,
+    reason,
+    station,
+    resource
+  });
+
+  // 🔹 Conserver uniquement les 10 dernières
+  user.history = user.history.slice(0, 10);
+
+  await user.save();
   await Game.deleteOne({ _id: game._id });
   console.log(`💀 Partie perdue (${reason}) sur ${station} (${resource})`);
 }
