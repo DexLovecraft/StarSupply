@@ -538,7 +538,7 @@ async function updateStationsInventory() {
 
 async function handleGameOver(game, reason, station, resource) {
   const durationSec = Math.floor((Date.now() - game.startTime) / 1000);
-  const durationMonths = Math.floor(durationSec / 60);
+  const durationMonths = Number((durationSec / 60).toFixed(1));
   const user = await User.findById(game.userId);
 
   // Record
