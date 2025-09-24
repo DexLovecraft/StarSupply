@@ -71,7 +71,7 @@ let gameOn = false
 const app = express();
 app.use(express.json());
 app.use(cors({
-  origin: "https://starsupply.alexbalmes.dev", // ou ""
+  origin: "*", // ou ""
   methods: "GET,POST,PUT,DELETE,OPTIONS",
   allowedHeaders: "Origin, X-Requested-With, Content-Type, Accept, Authorization"
 }));
