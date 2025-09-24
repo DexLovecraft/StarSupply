@@ -72,7 +72,7 @@ const app = express();
 app.use(express.json());
 
 app.get('/starsupply/ping', (req, res) => {
-  res.status(201).json({ message: "Ca fonctionne"})
+  res.status(200).json({ message: "Ca fonctionne"})
 });
 
 //
